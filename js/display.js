@@ -10,6 +10,7 @@
   var REFRESH_INTERVAL = 30000; // 30 seconds
   var CLOCK_INTERVAL = 1000;    // 1 second
   var SHEETS_URL_KEY = 'ft_display_sheets_url';
+  var DEFAULT_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzBzTZKpAHKidIsa653UWCo-TbUOgxCTbqyE69obmV2rij_0cJsnSsciOcZci564RrR/exec';
 
   var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -28,7 +29,7 @@
   // ---- Sheets URL config ----
 
   function getSheetsUrl() {
-    return localStorage.getItem(SHEETS_URL_KEY) || '';
+    return localStorage.getItem(SHEETS_URL_KEY) || DEFAULT_SHEETS_URL;
   }
 
   function setSheetsUrl(url) {
