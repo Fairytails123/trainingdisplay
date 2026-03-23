@@ -1,6 +1,6 @@
 /* ============================================
    display.js — TV Display (read-only dashboard)
-   Reads from localStorage (same device as planner)
+   Fetches data from Google Sheets API
    Auto-refreshes every 30 seconds
    ============================================ */
 
@@ -9,24 +9,69 @@
 
   var REFRESH_INTERVAL = 30000; // 30 seconds
   var CLOCK_INTERVAL = 1000;    // 1 second
+  var SHEETS_URL_KEY = 'ft_display_sheets_url';
 
   var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-  // ---- Storage reading (mirrors planner's localStorage keys) ----
+  // In-memory data cache (populated from Sheets API)
+  var cachedData = {
+    dogs: [],
+    slotsByDate: {},
+    timeSlots: [],
+    equipment: []
+  };
+  var lastFetchTime = null;
+  var fetchFailed = false;
 
-  function read(key) {
-    try {
-      var raw = localStorage.getItem(key);
-      return raw ? JSON.parse(raw) : null;
-    } catch (e) {
-      return null;
-    }
+  // ---- Sheets URL config ----
+
+  function getSheetsUrl() {
+    return localStorage.getItem(SHEETS_URL_KEY) || '';
   }
 
-  function getTimeSlots() {
-    return read('ft_config_timeslots') || [
+  function setSheetsUrl(url) {
+    localStorage.setItem(SHEETS_URL_KEY, url || '');
+  }
+
+  // ---- Data fetching ----
+
+  function fetchFromSheets(onComplete) {
+    var url = getSheetsUrl();
+    if (!url) {
+      fetchFailed = true;
+      if (onComplete) onComplete(false);
+      return;
+    }
+
+    var footer = document.getElementById('last-updated');
+    if (footer) footer.textContent = 'Syncing...';
+
+    fetch(url + '?action=getAll')
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data.success) {
+          cachedData.dogs = data.dogs || [];
+          cachedData.slotsByDate = data.slotsByDate || {};
+          cachedData.timeSlots = (data.timeSlots && data.timeSlots.length > 0) ? data.timeSlots : getDefaultTimeSlots();
+          cachedData.equipment = data.equipment || [];
+          lastFetchTime = new Date();
+          fetchFailed = false;
+        } else {
+          fetchFailed = true;
+        }
+        if (onComplete) onComplete(data.success);
+      })
+      .catch(function (err) {
+        console.warn('Fetch failed:', err.message);
+        fetchFailed = true;
+        if (onComplete) onComplete(false);
+      });
+  }
+
+  function getDefaultTimeSlots() {
+    return [
       { id: 'am_early', label: '08:00 – 09:00', shortLabel: '08–09', period: 'am' },
       { id: 'am_mid',   label: '09:00 – 10:00', shortLabel: '09–10', period: 'am' },
       { id: 'am_late',  label: '10:00 – 11:00', shortLabel: '10–11', period: 'am' },
@@ -38,20 +83,26 @@
     ];
   }
 
+  // ---- Data accessors (from cache) ----
+
+  function getTimeSlots() {
+    return cachedData.timeSlots.length > 0 ? cachedData.timeSlots : getDefaultTimeSlots();
+  }
+
   function getEquipment() {
-    return read('ft_config_equipment') || [];
+    return cachedData.equipment;
   }
 
   function getDogs() {
-    return read('ft_dogs') || [];
+    return cachedData.dogs;
   }
 
   function getDog(id) {
-    return getDogs().find(function (d) { return d.id === id; }) || null;
+    return cachedData.dogs.find(function (d) { return d.id === id; }) || null;
   }
 
   function getSlots(dateStr) {
-    return read('ft_slots_' + dateStr) || {};
+    return cachedData.slotsByDate[dateStr] || {};
   }
 
   // ---- Date helpers ----
@@ -75,21 +126,64 @@
            String(date.getMinutes()).padStart(2, '0');
   }
 
-  /**
-   * Check if the current time falls within a slot's time range.
-   * Parses slot labels like "09:00 – 10:00".
-   */
   function isCurrentSlot(slot) {
     var now = new Date();
     var nowMinutes = now.getHours() * 60 + now.getMinutes();
-
     var match = slot.label.match(/(\d{2}):(\d{2})\s*[–-]\s*(\d{2}):(\d{2})/);
     if (!match) return false;
-
     var startMinutes = parseInt(match[1]) * 60 + parseInt(match[2]);
     var endMinutes = parseInt(match[3]) * 60 + parseInt(match[4]);
-
     return nowMinutes >= startMinutes && nowMinutes < endMinutes;
+  }
+
+  // ---- Config overlay ----
+
+  function showConfigOverlay() {
+    var existing = document.getElementById('config-overlay');
+    if (existing) existing.remove();
+
+    var overlay = document.createElement('div');
+    overlay.id = 'config-overlay';
+    overlay.innerHTML =
+      '<div class="config-modal">' +
+        '<h2 class="config-title">Display Setup</h2>' +
+        '<p class="config-text">Enter the Google Apps Script URL from your training planner Google Sheet.</p>' +
+        '<input type="url" class="config-input" id="config-url" value="' + getSheetsUrl() + '" placeholder="https://script.google.com/macros/s/...">' +
+        '<div class="config-status" id="config-status"></div>' +
+        '<div class="config-actions">' +
+          '<button class="config-btn config-btn--test" id="config-test">Test</button>' +
+          '<button class="config-btn config-btn--save" id="config-save">Save & Connect</button>' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(overlay);
+
+    document.getElementById('config-test').addEventListener('click', function () {
+      var url = document.getElementById('config-url').value.trim();
+      var status = document.getElementById('config-status');
+      if (!url) { status.textContent = 'Please enter a URL.'; return; }
+      status.textContent = 'Testing...';
+      fetch(url + '?action=ping')
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          status.textContent = d.success ? 'Connected!' : 'Failed: ' + (d.error || 'Unknown error');
+          status.style.color = d.success ? '#A5D6A7' : '#FF5252';
+        })
+        .catch(function (e) {
+          status.textContent = 'Error: ' + e.message;
+          status.style.color = '#FF5252';
+        });
+    });
+
+    document.getElementById('config-save').addEventListener('click', function () {
+      var url = document.getElementById('config-url').value.trim();
+      setSheetsUrl(url);
+      overlay.remove();
+      fetchFromSheets(function () {
+        renderSchedule();
+        updateFooter();
+      });
+    });
   }
 
   // ---- Render ----
@@ -100,16 +194,26 @@
     var timeSlots = getTimeSlots();
     var equipment = getEquipment();
     var assignments = getSlots(todayStr);
-
-    // Check if we have any data
     var dogs = getDogs().filter(function (d) { return !d.archived; });
+    var url = getSheetsUrl();
+
+    if (!url) {
+      content.innerHTML =
+        '<div class="no-data">' +
+          '<div class="no-data__icon">&#9881;</div>' +
+          '<div class="no-data__title">Setup required</div>' +
+          '<div class="no-data__text">Click the gear icon to enter your Google Sheets API URL.</div>' +
+          '<button class="config-btn config-btn--save" onclick="document.getElementById(\'config-gear\').click()">Configure</button>' +
+        '</div>';
+      return;
+    }
 
     if (dogs.length === 0) {
       content.innerHTML =
         '<div class="no-data">' +
           '<div class="no-data__icon">&#128054;</div>' +
           '<div class="no-data__title">No training schedule</div>' +
-          '<div class="no-data__text">Open the Training Planner on this device to add dogs and assign slots.</div>' +
+          '<div class="no-data__text">' + (fetchFailed ? 'Could not connect to Google Sheets. Retrying...' : 'No dogs found. Add dogs in the Training Planner.') + '</div>' +
         '</div>';
       document.getElementById('conflict-count').textContent = '';
       return;
@@ -131,20 +235,17 @@
 
       var hasConflict = assignedDogs.length > 1;
       if (hasConflict) totalConflicts += assignedDogs.length;
-
       var isCurrent = isCurrentSlot(slot);
 
       html += '<div class="slot-row' +
         (isCurrent ? ' active' : '') +
         (hasConflict ? ' conflict' : '') + '">';
 
-      // Time column
       html += '<div class="slot-row__time ' + slot.period + '">' +
         '<span>' + slot.shortLabel + '</span>' +
         '<span class="slot-row__time-label">' + (slot.period === 'am' ? 'Morning' : 'Afternoon') + '</span>' +
       '</div>';
 
-      // Dogs column
       html += '<div class="slot-row__dogs">';
 
       if (assignedDogs.length === 0) {
@@ -153,12 +254,9 @@
         assignedDogs.forEach(function (dog) {
           html += '<div class="dog-entry">';
           html += '<span class="dog-entry__name">' + dog.name + '</span>';
-
           if (dog.breed) {
             html += '<span class="dog-entry__breed">' + dog.breed + '</span>';
           }
-
-          // Equipment tags
           if (dog.equipment && dog.equipment.length > 0) {
             html += '<div class="dog-entry__equipment">';
             dog.equipment.forEach(function (eqId) {
@@ -170,22 +268,19 @@
             });
             html += '</div>';
           }
-
           if (hasConflict) {
             html += '<span class="conflict-indicator">CONFLICT</span>';
           }
-
           html += '</div>';
         });
       }
 
-      html += '</div>'; // dogs
-      html += '</div>'; // slot-row
+      html += '</div>';
+      html += '</div>';
     });
 
     content.innerHTML = html;
 
-    // Conflict count
     var conflictEl = document.getElementById('conflict-count');
     if (totalConflicts > 0) {
       conflictEl.textContent = totalConflicts + ' scheduling conflict' + (totalConflicts > 1 ? 's' : '');
@@ -200,34 +295,59 @@
     document.getElementById('current-time').textContent = formatTime(now);
   }
 
-  function updateLastRefresh() {
-    document.getElementById('last-updated').textContent =
-      'Last updated: ' + formatTime(new Date());
+  function updateFooter() {
+    var footer = document.getElementById('last-updated');
+    if (fetchFailed && lastFetchTime) {
+      footer.textContent = 'Offline — last data from ' + formatTime(lastFetchTime);
+      footer.style.color = '#FF5252';
+    } else if (lastFetchTime) {
+      footer.textContent = 'Last synced: ' + formatTime(lastFetchTime);
+      footer.style.color = '';
+    } else {
+      footer.textContent = 'Not connected';
+    }
   }
 
   // ---- Init ----
 
   function init() {
     updateClock();
-    renderSchedule();
-    updateLastRefresh();
+
+    // Add gear icon to header
+    var headerRight = document.querySelector('.header-right');
+    if (headerRight) {
+      var gear = document.createElement('button');
+      gear.id = 'config-gear';
+      gear.className = 'config-gear-btn';
+      gear.innerHTML = '&#9881;';
+      gear.title = 'Settings';
+      gear.addEventListener('click', showConfigOverlay);
+      headerRight.appendChild(gear);
+    }
+
+    // Initial fetch and render
+    var url = getSheetsUrl();
+    if (url) {
+      fetchFromSheets(function () {
+        renderSchedule();
+        updateFooter();
+      });
+    } else {
+      renderSchedule();
+    }
 
     // Update clock every second
     setInterval(updateClock, CLOCK_INTERVAL);
 
-    // Refresh schedule every 30 seconds
+    // Refresh from Sheets every 30 seconds
     setInterval(function () {
-      renderSchedule();
-      updateLastRefresh();
-    }, REFRESH_INTERVAL);
-
-    // Listen for localStorage changes from the planner (cross-tab)
-    window.addEventListener('storage', function (e) {
-      if (e.key && e.key.startsWith('ft_')) {
-        renderSchedule();
-        updateLastRefresh();
+      if (getSheetsUrl()) {
+        fetchFromSheets(function () {
+          renderSchedule();
+          updateFooter();
+        });
       }
-    });
+    }, REFRESH_INTERVAL);
   }
 
   if (document.readyState === 'loading') {

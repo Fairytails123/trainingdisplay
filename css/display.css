@@ -239,6 +239,110 @@ body {
   font-size: 1rem;
 }
 
+/* ---- Config gear button ---- */
+.config-gear-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-top: 4px;
+  transition: color 0.2s;
+}
+
+.config-gear-btn:hover {
+  color: #fff;
+}
+
+/* ---- Config overlay ---- */
+#config-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.config-modal {
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 500px;
+  width: 90%;
+}
+
+.config-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.config-text {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+.config-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-dark);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: var(--text-white);
+  font-size: 0.9rem;
+  font-family: inherit;
+  margin-bottom: 12px;
+}
+
+.config-input:focus {
+  outline: none;
+  border-color: var(--ft-orange);
+}
+
+.config-status {
+  font-size: 0.85rem;
+  min-height: 1.2em;
+  margin-bottom: 16px;
+  color: var(--text-muted);
+}
+
+.config-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.config-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.config-btn--test {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-light);
+}
+
+.config-btn--test:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.config-btn--save {
+  background: var(--ft-orange);
+  color: #fff;
+}
+
+.config-btn--save:hover {
+  background: #E56200;
+}
+
 /* ---- Current slot highlight animation ---- */
 .slot-row.active .slot-row__time {
   animation: glowTime 3s ease-in-out infinite;
