@@ -1,0 +1,268 @@
+/* ============================================
+   Fairy Tails K9 — TV Display
+   Dark theme, large text, landscape-optimised
+   ============================================ */
+
+:root {
+  --bg-dark: #1A1A2E;
+  --bg-card: #16213E;
+  --bg-card-alt: #0F3460;
+  --ft-orange: #FF6F00;
+  --ft-orange-light: #FF9800;
+  --text-white: #FFFFFF;
+  --text-light: rgba(255, 255, 255, 0.85);
+  --text-muted: rgba(255, 255, 255, 0.5);
+  --am-bg: #1B5E20;
+  --am-text: #A5D6A7;
+  --pm-bg: #0D47A1;
+  --pm-text: #90CAF9;
+  --conflict-red: #FF5252;
+  --empty-text: rgba(255, 255, 255, 0.25);
+  --border: rgba(255, 255, 255, 0.08);
+  --radius: 12px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-white);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- Header ---- */
+.display-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 40px;
+  background: linear-gradient(135deg, var(--ft-orange), #E65100);
+  flex-shrink: 0;
+}
+
+.header-title {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.header-subtitle {
+  font-size: 1.1rem;
+  font-weight: 400;
+  opacity: 0.9;
+}
+
+.header-right {
+  text-align: right;
+}
+
+.header-date {
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.header-time {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+/* ---- Main Schedule ---- */
+#schedule-content {
+  flex: 1;
+  padding: 24px 40px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ---- Slot Row ---- */
+.slot-row {
+  display: flex;
+  align-items: stretch;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  overflow: hidden;
+  min-height: 70px;
+  transition: transform 0.3s;
+}
+
+.slot-row.active {
+  transform: scale(1.01);
+  box-shadow: 0 0 20px rgba(255, 111, 0, 0.3);
+}
+
+.slot-row.conflict {
+  border: 2px solid var(--conflict-red);
+}
+
+.slot-row__time {
+  width: 160px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+.slot-row__time.am {
+  background: var(--am-bg);
+  color: var(--am-text);
+}
+
+.slot-row__time.pm {
+  background: var(--pm-bg);
+  color: var(--pm-text);
+}
+
+.slot-row__time-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.7;
+  margin-top: 2px;
+}
+
+.slot-row__dogs {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 12px 24px;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.slot-row__empty {
+  color: var(--empty-text);
+  font-size: 1rem;
+  font-style: italic;
+}
+
+/* ---- Dog Entry ---- */
+.dog-entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dog-entry__name {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.dog-entry__breed {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.dog-entry__equipment {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.equip-tag {
+  font-size: 0.75rem;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.conflict-indicator {
+  color: var(--conflict-red);
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin-left: 8px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ---- Footer ---- */
+.display-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 40px;
+  background: rgba(0, 0, 0, 0.3);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+#conflict-count {
+  color: var(--conflict-red);
+  font-weight: 600;
+}
+
+/* ---- No Data State ---- */
+.no-data {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  gap: 16px;
+}
+
+.no-data__icon {
+  font-size: 4rem;
+}
+
+.no-data__title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-light);
+}
+
+.no-data__text {
+  font-size: 1rem;
+}
+
+/* ---- Current slot highlight animation ---- */
+.slot-row.active .slot-row__time {
+  animation: glowTime 3s ease-in-out infinite;
+}
+
+@keyframes glowTime {
+  0%, 100% { box-shadow: inset 0 0 0 rgba(255, 111, 0, 0); }
+  50% { box-shadow: inset 0 0 30px rgba(255, 111, 0, 0.3); }
+}
+
+/* ---- Responsive for smaller TVs / tablets ---- */
+@media (max-width: 1024px) {
+  .header-title { font-size: 1.5rem; }
+  .header-time { font-size: 2rem; }
+  .slot-row__time { width: 120px; font-size: 1.1rem; }
+  .dog-entry__name { font-size: 1.1rem; }
+  #schedule-content { padding: 16px 20px; }
+  .display-header { padding: 16px 20px; }
+}
+
+@media (max-width: 640px) {
+  .header-title { font-size: 1.2rem; }
+  .header-time { font-size: 1.5rem; }
+  .slot-row { flex-direction: column; }
+  .slot-row__time { width: 100%; flex-direction: row; gap: 8px; padding: 8px 16px; }
+  .dog-entry__name { font-size: 1rem; }
+}
