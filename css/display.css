@@ -1,6 +1,7 @@
 /* ============================================
    Fairy Tails K9 — TV Display
    Dark theme, large text, landscape-optimised
+   Dog-centric layout: each row = one dog
    ============================================ */
 
 :root {
@@ -85,113 +86,158 @@ body {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
-/* ---- Slot Row ---- */
-.slot-row {
+/* ---- Dog Row ---- */
+.dog-row {
   display: flex;
   align-items: stretch;
   background: var(--bg-card);
   border-radius: var(--radius);
   overflow: hidden;
   min-height: 70px;
-  transition: transform 0.3s;
 }
 
-.slot-row.active {
-  transform: scale(1.01);
-  box-shadow: 0 0 20px rgba(255, 111, 0, 0.3);
+.dog-row--empty {
+  opacity: 0.45;
 }
 
-.slot-row.conflict {
-  border: 2px solid var(--conflict-red);
-}
-
-.slot-row__time {
-  width: 160px;
+/* Left column: dog info */
+.dog-row__info {
+  width: 200px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
-  padding: 12px 16px;
-  font-weight: 700;
-  font-size: 1.3rem;
+  padding: 14px 20px;
+  border-right: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.15);
 }
 
-.slot-row__time.am {
+.dog-row__name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.dog-row__breed {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.dog-row__equipment {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+/* Content area: slots + notes */
+.dog-row__content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+/* Slot cards area */
+.dog-row__slots {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+/* Individual slot card */
+.slot-card {
+  border-radius: 10px;
+  padding: 8px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.3;
+  min-width: 80px;
+  text-align: center;
+}
+
+.slot-card--am {
   background: var(--am-bg);
   color: var(--am-text);
 }
 
-.slot-row__time.pm {
+.slot-card--pm {
   background: var(--pm-bg);
   color: var(--pm-text);
 }
 
-.slot-row__time-label {
+.slot-card--today {
+  box-shadow: 0 0 0 2px var(--ft-orange), 0 0 12px rgba(255, 111, 0, 0.4);
+}
+
+.slot-card--conflict {
+  box-shadow: 0 0 0 2px var(--conflict-red);
+}
+
+.slot-card__day {
   font-size: 0.7rem;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  opacity: 0.7;
-  margin-top: 2px;
+  letter-spacing: 0.5px;
+  opacity: 0.8;
+  font-weight: 600;
 }
 
-.slot-row__dogs {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  padding: 12px 24px;
-  gap: 32px;
-  flex-wrap: wrap;
-}
-
-.slot-row__empty {
-  color: var(--empty-text);
-  font-size: 1rem;
-  font-style: italic;
-}
-
-/* ---- Dog Entry ---- */
-.dog-entry {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.dog-entry__name {
-  font-size: 1.3rem;
+.slot-card__time {
+  font-size: 1.1rem;
   font-weight: 700;
 }
 
-.dog-entry__breed {
+.slot-card__conflict {
+  color: var(--conflict-red);
+  font-weight: 700;
+  font-size: 0.7rem;
+  animation: pulse 2s infinite;
+}
+
+/* Notes area */
+.dog-row__notes {
+  flex: 1;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  border-left: 1px solid var(--border);
+}
+
+.dog-row__notes--full {
+  border-left: none;
+}
+
+.dog-row__notes-text {
   font-size: 0.9rem;
   color: var(--text-muted);
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  line-height: 1.4;
 }
 
-.dog-entry__equipment {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
+/* Equipment tags */
 .equip-tag {
-  font-size: 0.75rem;
-  padding: 3px 10px;
+  font-size: 0.7rem;
+  padding: 2px 8px;
   border-radius: 20px;
   font-weight: 600;
   white-space: nowrap;
 }
 
-.conflict-indicator {
-  color: var(--conflict-red);
-  font-weight: 700;
-  font-size: 0.85rem;
-  margin-left: 8px;
-  animation: pulse 2s infinite;
-}
-
+/* Conflict pulse */
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
@@ -239,126 +285,12 @@ body {
   font-size: 1rem;
 }
 
-/* ---- Config gear button ---- */
-.config-gear-btn {
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: 4px 8px;
-  margin-top: 4px;
-  transition: color 0.2s;
-}
-
-.config-gear-btn:hover {
-  color: #fff;
-}
-
-/* ---- Config overlay ---- */
-#config-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.8);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.config-modal {
-  background: var(--bg-card);
-  border-radius: 16px;
-  padding: 32px;
-  max-width: 500px;
-  width: 90%;
-}
-
-.config-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-
-.config-text {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  margin-bottom: 20px;
-}
-
-.config-input {
-  width: 100%;
-  padding: 12px 16px;
-  background: var(--bg-dark);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  color: var(--text-white);
-  font-size: 0.9rem;
-  font-family: inherit;
-  margin-bottom: 12px;
-}
-
-.config-input:focus {
-  outline: none;
-  border-color: var(--ft-orange);
-}
-
-.config-status {
-  font-size: 0.85rem;
-  min-height: 1.2em;
-  margin-bottom: 16px;
-  color: var(--text-muted);
-}
-
-.config-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.config-btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.config-btn--test {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-light);
-}
-
-.config-btn--test:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.config-btn--save {
-  background: var(--ft-orange);
-  color: #fff;
-}
-
-.config-btn--save:hover {
-  background: #E56200;
-}
-
-/* ---- Current slot highlight animation ---- */
-.slot-row.active .slot-row__time {
-  animation: glowTime 3s ease-in-out infinite;
-}
-
-@keyframes glowTime {
-  0%, 100% { box-shadow: inset 0 0 0 rgba(255, 111, 0, 0); }
-  50% { box-shadow: inset 0 0 30px rgba(255, 111, 0, 0.3); }
-}
-
 /* ---- Responsive for smaller TVs / tablets ---- */
 @media (max-width: 1024px) {
   .header-title { font-size: 1.5rem; }
   .header-time { font-size: 2rem; }
-  .slot-row__time { width: 120px; font-size: 1.1rem; }
-  .dog-entry__name { font-size: 1.1rem; }
+  .dog-row__info { width: 160px; }
+  .dog-row__name { font-size: 1.1rem; }
   #schedule-content { padding: 16px 20px; }
   .display-header { padding: 16px 20px; }
 }
@@ -366,7 +298,17 @@ body {
 @media (max-width: 640px) {
   .header-title { font-size: 1.2rem; }
   .header-time { font-size: 1.5rem; }
-  .slot-row { flex-direction: column; }
-  .slot-row__time { width: 100%; flex-direction: row; gap: 8px; padding: 8px 16px; }
-  .dog-entry__name { font-size: 1rem; }
+  .dog-row { flex-direction: column; }
+  .dog-row__info {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+  }
+  .dog-row__content { flex-direction: column; align-items: stretch; }
+  .dog-row__notes { border-left: none; border-top: 1px solid var(--border); }
+  .dog-row__name { font-size: 1rem; }
 }

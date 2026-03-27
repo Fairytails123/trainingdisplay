@@ -1,7 +1,8 @@
 /* ============================================
    display.js — TV Display (read-only dashboard)
-   Fetches data from Google Sheets API
-   Auto-refreshes every 30 seconds
+   Dog-centric layout: each row = one dog
+   Shows bookings across the next 14 days
+   Fetches from Google Sheets API, refreshes every 30s
    ============================================ */
 
 (function () {
@@ -9,12 +10,12 @@
 
   var REFRESH_INTERVAL = 30000; // 30 seconds
   var CLOCK_INTERVAL = 1000;    // 1 second
-  var SHEETS_URL_KEY = 'ft_display_sheets_url';
-  var DEFAULT_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzBzTZKpAHKidIsa653UWCo-TbUOgxCTbqyE69obmV2rij_0cJsnSsciOcZci564RrR/exec';
+  var API_URL = 'https://script.google.com/macros/s/AKfycbzBzTZKpAHKidIsa653UWCo-TbUOgxCTbqyE69obmV2rij_0cJsnSsciOcZci564RrR/exec';
 
   var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  var DAYS_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  var DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   // In-memory data cache (populated from Sheets API)
   var cachedData = {
@@ -26,30 +27,25 @@
   var lastFetchTime = null;
   var fetchFailed = false;
 
-  // ---- Sheets URL config ----
+  // ---- HTML escaping (XSS prevention) ----
 
-  function getSheetsUrl() {
-    return localStorage.getItem(SHEETS_URL_KEY) || DEFAULT_SHEETS_URL;
-  }
-
-  function setSheetsUrl(url) {
-    localStorage.setItem(SHEETS_URL_KEY, url || '');
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
   // ---- Data fetching ----
 
   function fetchFromSheets(onComplete) {
-    var url = getSheetsUrl();
-    if (!url) {
-      fetchFailed = true;
-      if (onComplete) onComplete(false);
-      return;
-    }
-
     var footer = document.getElementById('last-updated');
     if (footer) footer.textContent = 'Syncing...';
 
-    fetch(url + '?action=getAll')
+    fetch(API_URL + '?action=getAll')
       .then(function (res) { return res.json(); })
       .then(function (data) {
         if (data.success) {
@@ -98,14 +94,6 @@
     return cachedData.dogs;
   }
 
-  function getDog(id) {
-    return cachedData.dogs.find(function (d) { return d.id === id; }) || null;
-  }
-
-  function getSlots(dateStr) {
-    return cachedData.slotsByDate[dateStr] || {};
-  }
-
   // ---- Date helpers ----
 
   function getTodayStr() {
@@ -116,7 +104,7 @@
   }
 
   function formatDateLong(date) {
-    return DAYS[date.getDay()] + ' ' +
+    return DAYS_FULL[date.getDay()] + ' ' +
            date.getDate() + ' ' +
            MONTHS[date.getMonth()] + ' ' +
            date.getFullYear();
@@ -127,63 +115,72 @@
            String(date.getMinutes()).padStart(2, '0');
   }
 
-  function isCurrentSlot(slot) {
-    var now = new Date();
-    var nowMinutes = now.getHours() * 60 + now.getMinutes();
-    var match = slot.label.match(/(\d{2}):(\d{2})\s*[–-]\s*(\d{2}):(\d{2})/);
-    if (!match) return false;
-    var startMinutes = parseInt(match[1]) * 60 + parseInt(match[2]);
-    var endMinutes = parseInt(match[3]) * 60 + parseInt(match[4]);
-    return nowMinutes >= startMinutes && nowMinutes < endMinutes;
+  // ---- 14-day schedule builder ----
+
+  function getNext14Days() {
+    var dates = [];
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for (var i = 0; i < 14; i++) {
+      var d = new Date(today);
+      d.setDate(today.getDate() + i);
+      var mm = String(d.getMonth() + 1).padStart(2, '0');
+      var dd = String(d.getDate()).padStart(2, '0');
+      dates.push({
+        dateStr: d.getFullYear() + '-' + mm + '-' + dd,
+        dateObj: d
+      });
+    }
+    return dates;
   }
 
-  // ---- Config overlay ----
+  function formatSlotCard(dateObj, slotId) {
+    var timeSlots = getTimeSlots();
+    var slot = timeSlots.find(function (s) { return s.id === slotId; });
+    var timeLabel = slot ? slot.shortLabel : slotId;
+    var dayName = DAYS_SHORT[dateObj.getDay()];
+    var dayNum = dateObj.getDate();
+    var isToday = dateObj.toDateString() === new Date().toDateString();
+    var period = slot ? slot.period : 'am';
+    return {
+      dayLabel: dayName + ' ' + dayNum,
+      timeLabel: timeLabel,
+      isToday: isToday,
+      period: period
+    };
+  }
 
-  function showConfigOverlay() {
-    var existing = document.getElementById('config-overlay');
-    if (existing) existing.remove();
+  function buildDogSchedules() {
+    var dogs = getDogs().filter(function (d) { return !d.archived; });
+    var dates = getNext14Days();
 
-    var overlay = document.createElement('div');
-    overlay.id = 'config-overlay';
-    overlay.innerHTML =
-      '<div class="config-modal">' +
-        '<h2 class="config-title">Display Setup</h2>' +
-        '<p class="config-text">Enter the Google Apps Script URL from your training planner Google Sheet.</p>' +
-        '<input type="url" class="config-input" id="config-url" value="' + getSheetsUrl() + '" placeholder="https://script.google.com/macros/s/...">' +
-        '<div class="config-status" id="config-status"></div>' +
-        '<div class="config-actions">' +
-          '<button class="config-btn config-btn--test" id="config-test">Test</button>' +
-          '<button class="config-btn config-btn--save" id="config-save">Save & Connect</button>' +
-        '</div>' +
-      '</div>';
-
-    document.body.appendChild(overlay);
-
-    document.getElementById('config-test').addEventListener('click', function () {
-      var url = document.getElementById('config-url').value.trim();
-      var status = document.getElementById('config-status');
-      if (!url) { status.textContent = 'Please enter a URL.'; return; }
-      status.textContent = 'Testing...';
-      fetch(url + '?action=ping')
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-          status.textContent = d.success ? 'Connected!' : 'Failed: ' + (d.error || 'Unknown error');
-          status.style.color = d.success ? '#A5D6A7' : '#FF5252';
-        })
-        .catch(function (e) {
-          status.textContent = 'Error: ' + e.message;
-          status.style.color = '#FF5252';
-        });
-    });
-
-    document.getElementById('config-save').addEventListener('click', function () {
-      var url = document.getElementById('config-url').value.trim();
-      setSheetsUrl(url);
-      overlay.remove();
-      fetchFromSheets(function () {
-        renderSchedule();
-        updateFooter();
+    return dogs.map(function (dog) {
+      var slots = [];
+      dates.forEach(function (dateInfo) {
+        var dayAssignments = cachedData.slotsByDate[dateInfo.dateStr];
+        if (dayAssignments && dayAssignments[dog.id]) {
+          var assignment = dayAssignments[dog.id];
+          var cardInfo = formatSlotCard(dateInfo.dateObj, assignment.slotId);
+          slots.push({
+            date: dateInfo.dateStr,
+            slotId: assignment.slotId,
+            dayLabel: cardInfo.dayLabel,
+            timeLabel: cardInfo.timeLabel,
+            isToday: cardInfo.isToday,
+            period: cardInfo.period
+          });
+        }
       });
+      return {
+        dog: dog,
+        slots: slots,
+        notes: dog.notes || ''
+      };
+    }).sort(function (a, b) {
+      // Dogs with upcoming slots first, then alphabetical
+      if (a.slots.length > 0 && b.slots.length === 0) return -1;
+      if (a.slots.length === 0 && b.slots.length > 0) return 1;
+      return a.dog.name.localeCompare(b.dog.name);
     });
   }
 
@@ -191,100 +188,108 @@
 
   function renderSchedule() {
     var content = document.getElementById('schedule-content');
-    var todayStr = getTodayStr();
-    var timeSlots = getTimeSlots();
     var equipment = getEquipment();
-    var assignments = getSlots(todayStr);
     var dogs = getDogs().filter(function (d) { return !d.archived; });
-    var url = getSheetsUrl();
-
-    if (!url) {
-      content.innerHTML =
-        '<div class="no-data">' +
-          '<div class="no-data__icon">&#9881;</div>' +
-          '<div class="no-data__title">Setup required</div>' +
-          '<div class="no-data__text">Click the gear icon to enter your Google Sheets API URL.</div>' +
-          '<button class="config-btn config-btn--save" onclick="document.getElementById(\'config-gear\').click()">Configure</button>' +
-        '</div>';
-      return;
-    }
 
     if (dogs.length === 0) {
       content.innerHTML =
         '<div class="no-data">' +
           '<div class="no-data__icon">&#128054;</div>' +
           '<div class="no-data__title">No training schedule</div>' +
-          '<div class="no-data__text">' + (fetchFailed ? 'Could not connect to Google Sheets. Retrying...' : 'No dogs found. Add dogs in the Training Planner.') + '</div>' +
+          '<div class="no-data__text">' +
+            escapeHtml(fetchFailed ? 'Could not connect to Google Sheets. Retrying...' : 'No dogs found. Add dogs in the Training Planner.') +
+          '</div>' +
         '</div>';
       document.getElementById('conflict-count').textContent = '';
       return;
     }
 
+    var schedules = buildDogSchedules();
     var html = '';
-    var totalConflicts = 0;
 
-    timeSlots.forEach(function (slot) {
-      var assignedDogs = [];
-      Object.keys(assignments).forEach(function (dogId) {
-        if (assignments[dogId].slotId === slot.id) {
-          var dog = getDog(dogId);
-          if (dog && !dog.archived) {
-            assignedDogs.push(dog);
-          }
-        }
+    // Count conflicts: multiple dogs in the same slot on the same date
+    var conflictMap = {};
+    schedules.forEach(function (entry) {
+      entry.slots.forEach(function (s) {
+        var key = s.date + '|' + s.slotId;
+        conflictMap[key] = (conflictMap[key] || 0) + 1;
       });
+    });
 
-      var hasConflict = assignedDogs.length > 1;
-      if (hasConflict) totalConflicts += assignedDogs.length;
-      var isCurrent = isCurrentSlot(slot);
+    var totalConflicts = 0;
+    Object.keys(conflictMap).forEach(function (key) {
+      if (conflictMap[key] > 1) totalConflicts++;
+    });
 
-      html += '<div class="slot-row' +
-        (isCurrent ? ' active' : '') +
-        (hasConflict ? ' conflict' : '') + '">';
+    // Render each dog as a row
+    schedules.forEach(function (entry) {
+      var dog = entry.dog;
+      var slots = entry.slots;
+      var notes = entry.notes;
+      var hasSlots = slots.length > 0;
+      var hasNotes = notes.length > 0;
+      var isEmpty = !hasSlots && !hasNotes;
 
-      html += '<div class="slot-row__time ' + slot.period + '">' +
-        '<span>' + slot.shortLabel + '</span>' +
-        '<span class="slot-row__time-label">' + (slot.period === 'am' ? 'Morning' : 'Afternoon') + '</span>' +
-      '</div>';
+      html += '<div class="dog-row' + (isEmpty ? ' dog-row--empty' : '') + '">';
 
-      html += '<div class="slot-row__dogs">';
-
-      if (assignedDogs.length === 0) {
-        html += '<span class="slot-row__empty">No dogs scheduled</span>';
-      } else {
-        assignedDogs.forEach(function (dog) {
-          html += '<div class="dog-entry">';
-          html += '<span class="dog-entry__name">' + dog.name + '</span>';
-          if (dog.breed) {
-            html += '<span class="dog-entry__breed">' + dog.breed + '</span>';
+      // Left column: dog info
+      html += '<div class="dog-row__info">';
+      html += '<div class="dog-row__name">' + escapeHtml(dog.name) + '</div>';
+      if (dog.breed) {
+        html += '<div class="dog-row__breed">' + escapeHtml(dog.breed) + '</div>';
+      }
+      if (dog.equipment && dog.equipment.length > 0) {
+        html += '<div class="dog-row__equipment">';
+        dog.equipment.forEach(function (eqId) {
+          var eq = equipment.find(function (e) { return e.id === eqId; });
+          if (eq) {
+            html += '<span class="equip-tag" style="background:' + escapeHtml(eq.colour) +
+                    ';color:' + escapeHtml(eq.textColour) + ';">' + escapeHtml(eq.label) + '</span>';
           }
-          if (dog.equipment && dog.equipment.length > 0) {
-            html += '<div class="dog-entry__equipment">';
-            dog.equipment.forEach(function (eqId) {
-              var eq = equipment.find(function (e) { return e.id === eqId; });
-              if (eq) {
-                html += '<span class="equip-tag" style="background:' + eq.colour +
-                        ';color:' + eq.textColour + ';">' + eq.label + '</span>';
-              }
-            });
-            html += '</div>';
-          }
-          if (hasConflict) {
-            html += '<span class="conflict-indicator">CONFLICT</span>';
+        });
+        html += '</div>';
+      }
+      html += '</div>';
+
+      // Content area: slots + notes
+      html += '<div class="dog-row__content">';
+
+      // Slot cards
+      if (hasSlots) {
+        html += '<div class="dog-row__slots">';
+        slots.forEach(function (s) {
+          var conflictKey = s.date + '|' + s.slotId;
+          var isConflict = conflictMap[conflictKey] > 1;
+          html += '<div class="slot-card slot-card--' + escapeHtml(s.period) +
+                  (s.isToday ? ' slot-card--today' : '') +
+                  (isConflict ? ' slot-card--conflict' : '') + '">';
+          html += '<span class="slot-card__day">' + escapeHtml(s.dayLabel) + '</span>';
+          html += '<span class="slot-card__time">' + escapeHtml(s.timeLabel) + '</span>';
+          if (isConflict) {
+            html += '<span class="slot-card__conflict">!</span>';
           }
           html += '</div>';
         });
+        html += '</div>';
       }
 
-      html += '</div>';
-      html += '</div>';
+      // Notes
+      if (hasNotes) {
+        html += '<div class="dog-row__notes' + (!hasSlots ? ' dog-row__notes--full' : '') + '">';
+        html += '<div class="dog-row__notes-text">' + escapeHtml(notes) + '</div>';
+        html += '</div>';
+      }
+
+      html += '</div>'; // .dog-row__content
+      html += '</div>'; // .dog-row
     });
 
     content.innerHTML = html;
 
+    // Update conflict count in footer
     var conflictEl = document.getElementById('conflict-count');
     if (totalConflicts > 0) {
-      conflictEl.textContent = totalConflicts + ' scheduling conflict' + (totalConflicts > 1 ? 's' : '');
+      conflictEl.textContent = totalConflicts + ' time slot conflict' + (totalConflicts > 1 ? 's' : '');
     } else {
       conflictEl.textContent = '';
     }
@@ -299,13 +304,13 @@
   function updateFooter() {
     var footer = document.getElementById('last-updated');
     if (fetchFailed && lastFetchTime) {
-      footer.textContent = 'Offline — last data from ' + formatTime(lastFetchTime);
+      footer.textContent = 'Offline \u2014 last data from ' + formatTime(lastFetchTime);
       footer.style.color = '#FF5252';
     } else if (lastFetchTime) {
       footer.textContent = 'Last synced: ' + formatTime(lastFetchTime);
       footer.style.color = '';
     } else {
-      footer.textContent = 'Not connected';
+      footer.textContent = 'Connecting...';
     }
   }
 
@@ -314,40 +319,21 @@
   function init() {
     updateClock();
 
-    // Add gear icon to header
-    var headerRight = document.querySelector('.header-right');
-    if (headerRight) {
-      var gear = document.createElement('button');
-      gear.id = 'config-gear';
-      gear.className = 'config-gear-btn';
-      gear.innerHTML = '&#9881;';
-      gear.title = 'Settings';
-      gear.addEventListener('click', showConfigOverlay);
-      headerRight.appendChild(gear);
-    }
-
     // Initial fetch and render
-    var url = getSheetsUrl();
-    if (url) {
-      fetchFromSheets(function () {
-        renderSchedule();
-        updateFooter();
-      });
-    } else {
+    fetchFromSheets(function () {
       renderSchedule();
-    }
+      updateFooter();
+    });
 
     // Update clock every second
     setInterval(updateClock, CLOCK_INTERVAL);
 
     // Refresh from Sheets every 30 seconds
     setInterval(function () {
-      if (getSheetsUrl()) {
-        fetchFromSheets(function () {
-          renderSchedule();
-          updateFooter();
-        });
-      }
+      fetchFromSheets(function () {
+        renderSchedule();
+        updateFooter();
+      });
     }, REFRESH_INTERVAL);
   }
 
