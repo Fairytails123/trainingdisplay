@@ -238,6 +238,9 @@
       if (dog.breed) {
         html += '<div class="dog-row__breed">' + escapeHtml(dog.breed) + '</div>';
       }
+      if (dog.weekNumber != null) {
+        html += '<div class="dog-row__week">Wk ' + escapeHtml(String(dog.weekNumber)) + '</div>';
+      }
       if (dog.equipment && dog.equipment.length > 0) {
         html += '<div class="dog-row__equipment">';
         dog.equipment.forEach(function (eqId) {
