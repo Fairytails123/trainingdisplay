@@ -191,10 +191,7 @@
         notes: dog.notes || ''
       };
     }).sort(function (a, b) {
-      // Dogs with upcoming slots first, then alphabetical
-      if (a.slots.length > 0 && b.slots.length === 0) return -1;
-      if (a.slots.length === 0 && b.slots.length > 0) return 1;
-      return a.dog.name.localeCompare(b.dog.name);
+      return a.dog.name.localeCompare(b.dog.name, 'en-GB', { sensitivity: 'base' });
     });
   }
 
