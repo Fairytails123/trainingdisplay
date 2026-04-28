@@ -4,9 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#FF6F00">
+  <!-- Display is left running on TVs/tablets for hours — discourage stale caches so deploys reach devices. -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Fairy Tails — Training Display</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/display.css">
+  <link rel="stylesheet" href="css/display.css?v=20260428">
 </head>
 <body>
   <header class="display-header">
@@ -27,6 +31,6 @@
     <span id="conflict-count"></span>
   </footer>
 
-  <script src="js/display.js"></script>
+  <script src="js/display.js?v=20260428"></script>
 </body>
 </html>

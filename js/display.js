@@ -41,11 +41,12 @@
 
   // ---- Data fetching ----
 
-  function fetchFromSheets(onComplete) {
+  function fetchFromSheets(onComplete, isRetry) {
     var footer = document.getElementById('last-updated');
     if (footer) footer.textContent = 'Syncing...';
 
-    fetch(API_URL + '?action=getAll')
+    // Append a timestamp so neither browser nor any intermediary serves a cached response.
+    fetch(API_URL + '?action=getAll&_t=' + Date.now())
       .then(function (res) { return res.json(); })
       .then(function (data) {
         if (data.success) {
@@ -55,16 +56,29 @@
           cachedData.equipment = data.equipment || [];
           lastFetchTime = new Date();
           fetchFailed = false;
-        } else {
-          fetchFailed = true;
+          if (onComplete) onComplete(true);
+          return;
         }
-        if (onComplete) onComplete(data.success);
+        console.warn('Sheets API returned failure:', data.error || '(no error message)');
+        handleFetchFailure(onComplete, isRetry);
       })
       .catch(function (err) {
         console.warn('Fetch failed:', err.message);
-        fetchFailed = true;
-        if (onComplete) onComplete(false);
+        handleFetchFailure(onComplete, isRetry);
       });
+  }
+
+  // On the first failure within a polling cycle, retry once after a short delay
+  // before falling back to the 30s interval — keeps the screen in sync through brief blips.
+  function handleFetchFailure(onComplete, isRetry) {
+    fetchFailed = true;
+    if (isRetry) {
+      if (onComplete) onComplete(false);
+      return;
+    }
+    setTimeout(function () {
+      fetchFromSheets(onComplete, true);
+    }, 5000);
   }
 
   function getDefaultTimeSlots() {
