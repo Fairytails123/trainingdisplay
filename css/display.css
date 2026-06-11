@@ -93,7 +93,8 @@ body {
 #schedule-content {
   flex: 1;
   padding: 24px 40px;
-  overflow-y: auto;
+  /* never scroll on the TV — display.js scales the list to fit the screen */
+  overflow-y: hidden;
   display: flex;
   flex-direction: column;
   gap: 10px;

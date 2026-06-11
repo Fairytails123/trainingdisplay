@@ -10,7 +10,6 @@
 
   var REFRESH_INTERVAL = 30000; // 30 seconds
   var CLOCK_INTERVAL = 1000;    // 1 second
-  var AUTO_SCROLL_INTERVAL = 12000; // page the list on unattended TVs when it overflows
   var API_URL = 'https://script.google.com/macros/s/AKfycbzBzTZKpAHKidIsa653UWCo-TbUOgxCTbqyE69obmV2rij_0cJsnSsciOcZci564RrR/exec';
 
   var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -310,16 +309,19 @@
     }
   }
 
-  // Nobody touches the TV: when the list is taller than the screen, page
-  // through it slowly and wrap back to the top so every dog gets seen.
-  function autoScrollTick() {
+  // No scrolling on the TV: every dog must stay on screen. When the list is
+  // taller than the viewport, scale it down proportionally (zoom recomputes
+  // layout, so client/scroll heights are re-measured until it fits).
+  function fitToScreen() {
     var el = document.getElementById('schedule-content');
-    if (!el || el.scrollHeight <= el.clientHeight + 4) return; // everything fits
-    var atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 8;
-    if (atBottom) {
-      el.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      el.scrollBy({ top: Math.round(el.clientHeight * 0.85), behavior: 'smooth' });
+    if (!el) return;
+    el.style.zoom = '';
+    for (var i = 0; i < 5 && el.scrollHeight > el.clientHeight; i++) {
+      var current = parseFloat(el.style.zoom) || 1;
+      var next = current * (el.clientHeight / el.scrollHeight) * 0.99;
+      if (next < 0.4) { next = 0.4; } // readability floor — below this stop shrinking
+      el.style.zoom = String(next);
+      if (next === 0.4) break;
     }
   }
 
@@ -350,8 +352,12 @@
     // Initial fetch and render
     fetchFromSheets(function () {
       renderSchedule();
+      fitToScreen();
       updateFooter();
     });
+
+    // Re-fit if the TV/browser window changes size
+    window.addEventListener('resize', fitToScreen);
 
     // Update clock every second
     setInterval(updateClock, CLOCK_INTERVAL);
@@ -360,12 +366,10 @@
     setInterval(function () {
       fetchFromSheets(function () {
         renderSchedule();
+        fitToScreen();
         updateFooter();
       });
     }, REFRESH_INTERVAL);
-
-    // Cycle through an overflowing list so off-screen dogs rotate into view
-    setInterval(autoScrollTick, AUTO_SCROLL_INTERVAL);
   }
 
   if (document.readyState === 'loading') {
