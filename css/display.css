@@ -108,18 +108,25 @@ body {
   border-radius: var(--radius);
   overflow: hidden;
   min-height: 70px;
+  /* rows live in a height-constrained scroll column — without this they
+     compress to fit and overflow:hidden clips the names */
+  flex-shrink: 0;
 }
 
 .dog-row--empty {
   opacity: 0.45;
 }
 
-/* Left column: dog info */
+/* Left column: dog info — sizes to the name (no fixed width), capped so
+   slots/notes always keep room; long names also scale down via clamp */
 .dog-row__info {
-  width: 200px;
+  width: auto;
+  min-width: 200px;
+  max-width: clamp(240px, 26vw, 480px);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   justify-content: center;
   padding: 14px 20px;
   border-right: 1px solid var(--border);
@@ -127,19 +134,21 @@ body {
 }
 
 .dog-row__name {
-  font-size: 1.3rem;
+  font-size: clamp(1.3rem, 1.6vw, 1.9rem);
   font-weight: 700;
   line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .dog-row__breed {
-  font-size: 0.8rem;
+  font-size: clamp(0.8rem, 0.9vw, 1rem);
   color: var(--text-muted);
   margin-top: 2px;
 }
 
 .dog-row__week {
   display: inline-block;
+  align-self: flex-start; /* pill hugs its text instead of stretching full width */
   /* Strong blue, not brand cyan — small white text needs the AA-safe fill */
   background: var(--ft-blue-strong);
   color: #fff;
@@ -309,11 +318,20 @@ body {
   font-size: 1rem;
 }
 
+/* ---- Large TVs: use the width — bigger type across the row ---- */
+@media (min-width: 1600px) {
+  .dog-row__notes-text { font-size: 1.05rem; }
+  .slot-card__time { font-size: 1.3rem; }
+  .slot-card__day { font-size: 0.85rem; }
+  .equip-tag { font-size: 0.85rem; }
+  .dog-row__week { font-size: 0.85rem; }
+}
+
 /* ---- Responsive for smaller TVs / tablets ---- */
 @media (max-width: 1024px) {
   .header-title { font-size: 1.5rem; }
   .header-time { font-size: 2rem; }
-  .dog-row__info { width: 160px; }
+  .dog-row__info { min-width: 160px; }
   .dog-row__name { font-size: 1.1rem; }
   #schedule-content { padding: 16px 20px; }
   .display-header { padding: 16px 20px; }
@@ -325,6 +343,7 @@ body {
   .dog-row { flex-direction: column; }
   .dog-row__info {
     width: 100%;
+    max-width: none;
     flex-direction: row;
     align-items: center;
     gap: 12px;

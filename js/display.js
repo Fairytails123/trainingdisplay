@@ -10,6 +10,7 @@
 
   var REFRESH_INTERVAL = 30000; // 30 seconds
   var CLOCK_INTERVAL = 1000;    // 1 second
+  var AUTO_SCROLL_INTERVAL = 12000; // page the list on unattended TVs when it overflows
   var API_URL = 'https://script.google.com/macros/s/AKfycbzBzTZKpAHKidIsa653UWCo-TbUOgxCTbqyE69obmV2rij_0cJsnSsciOcZci564RrR/exec';
 
   var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -249,7 +250,7 @@
       if (dog.breed) {
         html += '<div class="dog-row__breed">' + escapeHtml(dog.breed) + '</div>';
       }
-      if (dog.weekNumber != null) {
+      if (dog.weekNumber != null && dog.weekNumber !== '') {
         html += '<div class="dog-row__week">Wk ' + escapeHtml(String(dog.weekNumber)) + '</div>';
       }
       if (dog.equipment && dog.equipment.length > 0) {
@@ -309,6 +310,19 @@
     }
   }
 
+  // Nobody touches the TV: when the list is taller than the screen, page
+  // through it slowly and wrap back to the top so every dog gets seen.
+  function autoScrollTick() {
+    var el = document.getElementById('schedule-content');
+    if (!el || el.scrollHeight <= el.clientHeight + 4) return; // everything fits
+    var atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 8;
+    if (atBottom) {
+      el.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      el.scrollBy({ top: Math.round(el.clientHeight * 0.85), behavior: 'smooth' });
+    }
+  }
+
   function updateClock() {
     var now = new Date();
     document.getElementById('current-date').textContent = formatDateLong(now);
@@ -349,6 +363,9 @@
         updateFooter();
       });
     }, REFRESH_INTERVAL);
+
+    // Cycle through an overflowing list so off-screen dogs rotate into view
+    setInterval(autoScrollTick, AUTO_SCROLL_INTERVAL);
   }
 
   if (document.readyState === 'loading') {
