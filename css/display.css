@@ -2,24 +2,31 @@
    Fairy Tails K9 — TV Display
    Dark theme, large text, landscape-optimised
    Dog-centric layout: each row = one dog
+   Fairy Tails blue brand palette (June 2026):
+   - Brand cyan #31ADD3 for accents and headings on dark
+     surfaces only — never under small white text (fails AA).
+   - Strong blue #0077B6 for fills carrying small white text.
+   - Deep navy #023E8A for emphasis surfaces.
    ============================================ */
 
 :root {
-  --bg-dark: #1A1A2E;
-  --bg-card: #16213E;
-  --bg-card-alt: #0F3460;
-  --ft-orange: #FF6F00;
-  --ft-orange-light: #FF9800;
+  --bg-dark: #081626;
+  --bg-card: #0E2440;
+  --bg-card-alt: #023E8A;
+  --ft-blue: #31ADD3;          /* primary brand — accents on dark */
+  --ft-blue-strong: #0077B6;   /* fills with small white text (AA) */
+  --ft-navy: #023E8A;          /* deep navy — emphasis, header */
+  --ft-tint: #E1F3F9;          /* light brand tint for secondary text */
   --text-white: #FFFFFF;
   --text-light: rgba(255, 255, 255, 0.85);
-  --text-muted: rgba(255, 255, 255, 0.5);
+  --text-muted: rgba(255, 255, 255, 0.55);
   --am-bg: #1B5E20;
   --am-text: #A5D6A7;
   --pm-bg: #0D47A1;
   --pm-text: #90CAF9;
   --conflict-red: #FF5252;
   --empty-text: rgba(255, 255, 255, 0.25);
-  --border: rgba(255, 255, 255, 0.08);
+  --border: rgba(225, 243, 249, 0.1);
   --radius: 12px;
 }
 
@@ -48,7 +55,9 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 20px 40px;
-  background: linear-gradient(135deg, var(--ft-orange), #E65100);
+  /* Deep navy gradient with a brand-cyan keyline — white header text is ~10:1 on navy */
+  background: linear-gradient(135deg, var(--ft-navy), #022757);
+  border-bottom: 3px solid var(--ft-blue);
   flex-shrink: 0;
 }
 
@@ -61,6 +70,7 @@ body {
 .header-subtitle {
   font-size: 1.1rem;
   font-weight: 400;
+  color: var(--ft-tint);
   opacity: 0.9;
 }
 
@@ -94,6 +104,7 @@ body {
   display: flex;
   align-items: stretch;
   background: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
   min-height: 70px;
@@ -129,7 +140,8 @@ body {
 
 .dog-row__week {
   display: inline-block;
-  background: var(--ft-orange);
+  /* Strong blue, not brand cyan — small white text needs the AA-safe fill */
+  background: var(--ft-blue-strong);
   color: #fff;
   font-size: 0.7rem;
   font-weight: 700;
@@ -186,7 +198,7 @@ body {
 }
 
 .slot-card--today {
-  box-shadow: 0 0 0 2px var(--ft-orange), 0 0 12px rgba(255, 111, 0, 0.4);
+  box-shadow: 0 0 0 2px var(--ft-blue), 0 0 12px rgba(49, 173, 211, 0.45);
 }
 
 .slot-card--conflict {
@@ -289,7 +301,8 @@ body {
 .no-data__title {
   font-size: 1.5rem;
   font-weight: 600;
-  color: var(--text-light);
+  /* Brand cyan reads cleanly on the dark background (large text, ~7:1) */
+  color: var(--ft-blue);
 }
 
 .no-data__text {
