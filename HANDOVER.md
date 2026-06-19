@@ -36,6 +36,10 @@ strings). The display surfaces them on each dog row.
 - Respects the no-scroll invariant — `fitToScreen()` still scales the whole list.
 - **Cache-bust:** `?v=20260619` on `css/display.css`, `js/display.js`,
   `manifest.json` in `index.html`.
+- **Verified live 2026-06-19:** a temp dog with dates set rendered the
+  right-aligned dates column correctly on the production TV URL (confirmed by the
+  user), then was removed (deleted + tombstoned). Dogs without dates show no
+  column. Backend save→read→delete round-trip preserved every date exactly.
 
 (Backend: the shared Apps Script auto-adds the new Dogs columns via
 `ensureDogColumns_`; redeployed to the prod deployment id. See the planner repo
