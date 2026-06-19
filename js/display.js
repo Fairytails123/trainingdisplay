@@ -129,6 +129,27 @@
            String(date.getMinutes()).padStart(2, '0');
   }
 
+  // Training dates arrive from the Sheet as 'YYYY-MM-DD' strings. Parse the
+  // string directly (no Date object) so a value like '2025-01-12' never shifts
+  // a day across the TV's timezone. Renders as '12 Jan 25'; '' for blanks.
+  function formatDateShort(isoStr) {
+    if (!isoStr) return '';
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(isoStr));
+    if (!m) return '';
+    var mon = MONTHS[parseInt(m[2], 10) - 1];
+    if (!mon) return '';
+    return parseInt(m[3], 10) + ' ' + mon + ' ' + m[1].slice(2);
+  }
+
+  // A break window: '12 Jan 25 to 16 Jan 25'. Degrades to a single date if only
+  // one end is set, and to '' when neither is.
+  function formatTrainingRange(startStr, endStr) {
+    var s = formatDateShort(startStr);
+    var e = formatDateShort(endStr);
+    if (s && e) return s + ' to ' + e;
+    return s || e || '';
+  }
+
   // ---- 14-day schedule builder ----
 
   function getNext14Days() {
@@ -239,7 +260,14 @@
       var notes = entry.notes;
       var hasSlots = slots.length > 0;
       var hasNotes = notes.length > 0;
-      var isEmpty = !hasSlots && !hasNotes;
+
+      // Training end date + break windows (right-aligned column, built below)
+      var endStr = formatDateShort(dog.trainingEndDate);
+      var break1 = formatTrainingRange(dog.break1Start, dog.break1End);
+      var break2 = formatTrainingRange(dog.break2Start, dog.break2End);
+      var hasDates = !!(endStr || break1 || break2);
+
+      var isEmpty = !hasSlots && !hasNotes && !hasDates;
 
       html += '<div class="dog-row' + (isEmpty ? ' dog-row--empty' : '') + '">';
 
@@ -295,6 +323,33 @@
       }
 
       html += '</div>'; // .dog-row__content
+
+      // Right-aligned training dates column. Hard product requirement: anything
+      // about the training end date or break windows is right-aligned from the
+      // viewer's perspective (far right edge of the row, text-align: right).
+      if (hasDates) {
+        html += '<div class="dog-row__dates">';
+        if (endStr) {
+          html += '<div class="dog-row__date-item dog-row__date-item--end">' +
+                    '<span class="dog-row__date-label">Training ends</span>' +
+                    '<span class="dog-row__date-value">' + escapeHtml(endStr) + '</span>' +
+                  '</div>';
+        }
+        if (break1) {
+          html += '<div class="dog-row__date-item">' +
+                    '<span class="dog-row__date-label">Break 1</span>' +
+                    '<span class="dog-row__date-value">' + escapeHtml(break1) + '</span>' +
+                  '</div>';
+        }
+        if (break2) {
+          html += '<div class="dog-row__date-item">' +
+                    '<span class="dog-row__date-label">Break 2</span>' +
+                    '<span class="dog-row__date-value">' + escapeHtml(break2) + '</span>' +
+                  '</div>';
+        }
+        html += '</div>'; // .dog-row__dates
+      }
+
       html += '</div>'; // .dog-row
     });
 

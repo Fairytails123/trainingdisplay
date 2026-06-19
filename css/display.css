@@ -261,6 +261,51 @@ body {
   line-height: 1.4;
 }
 
+/* Training dates column — training end date + break windows.
+   Hard product rule: this info is RIGHT-aligned from the viewer's perspective.
+   .dog-row__content is flex:1, so this flex-shrink:0 block is pushed to the far
+   right edge; align-items:flex-end + text-align:right right-align the contents. */
+.dog-row__dates {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;   /* push each item block to the right */
+  justify-content: center;
+  text-align: right;       /* right-align the text itself */
+  gap: 8px;
+  padding: 12px 24px;
+  border-left: 1px solid var(--border);
+  max-width: clamp(190px, 22vw, 340px);
+}
+
+.dog-row__date-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;   /* label + value hug the right edge */
+  line-height: 1.25;
+}
+
+.dog-row__date-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.dog-row__date-value {
+  font-size: clamp(0.85rem, 1vw, 1.1rem);
+  font-weight: 700;
+  color: var(--ft-tint);
+  /* Wrap at the spaces rather than clip: the row is overflow:hidden, so a long
+     break range ("12 Jan 25 to 16 Jan 25") on a mid-size screen must fall to a
+     second line, never get its left edge cut off. Large TVs keep it on one line. */
+  white-space: normal;
+}
+
+/* Emphasise the end date with brand cyan (large enough text to pass AA on dark) */
+.dog-row__date-item--end .dog-row__date-value { color: var(--ft-blue); }
+
 /* Equipment tags */
 .equip-tag {
   font-size: 0.7rem;
@@ -326,6 +371,8 @@ body {
   .slot-card__day { font-size: 0.85rem; }
   .equip-tag { font-size: 0.85rem; }
   .dog-row__week { font-size: 0.85rem; }
+  .dog-row__date-value { font-size: 1.2rem; }
+  .dog-row__date-label { font-size: 0.85rem; }
 }
 
 /* ---- Responsive for smaller TVs / tablets ---- */
@@ -355,4 +402,12 @@ body {
   .dog-row__content { flex-direction: column; align-items: stretch; }
   .dog-row__notes { border-left: none; border-top: 1px solid var(--border); }
   .dog-row__name { font-size: 1rem; }
+  /* Stacked rows: dates span full width but stay right-aligned per the rule */
+  .dog-row__dates {
+    width: 100%;
+    max-width: none;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    align-items: flex-end;
+  }
 }

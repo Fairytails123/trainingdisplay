@@ -12,6 +12,37 @@ for hours.
 
 ---
 
+## Session record — 19 June 2026
+
+### Training-date column (end date + break windows) — RIGHT-ALIGNED
+
+The planner now stores three dog date fields (`trainingEndDate`, plus break
+windows `break1Start`/`break1End`, `break2Start`/`break2End`, all `YYYY-MM-DD`
+strings). The display surfaces them on each dog row.
+
+- **Hard product rule applied:** anything about the training end date or break
+  windows is **right-aligned from the viewer's perspective**. New
+  `.dog-row__dates` column sits after `.dog-row__content` (which is `flex:1`, so
+  the dates block is pushed to the far right edge); `align-items:flex-end` +
+  `text-align:right` right-align the contents. Stacked `<=640px` layout keeps it
+  right-aligned (full width, top border).
+- **`js/display.js`:** `formatDateShort()` → "12 Jan 25" and
+  `formatTrainingRange()` → "12 Jan 25 to 16 Jan 25". Both parse the
+  `YYYY-MM-DD` string directly (no `Date`) → no off-by-one day across the TV's
+  timezone. Values are escaped before `innerHTML`. A dog that has only dates (no
+  slots/notes) is no longer dimmed (`hasDates` folded into `isEmpty`).
+- The end date is emphasised in brand cyan; break ranges wrap rather than clip
+  (the row is `overflow:hidden`), so a long range can never lose its left edge.
+- Respects the no-scroll invariant — `fitToScreen()` still scales the whole list.
+- **Cache-bust:** `?v=20260619` on `css/display.css`, `js/display.js`,
+  `manifest.json` in `index.html`.
+
+(Backend: the shared Apps Script auto-adds the new Dogs columns via
+`ensureDogColumns_`; redeployed to the prod deployment id. See the planner repo
+handover + `APPS_SCRIPT.md` at the workspace root.)
+
+---
+
 ## Session record — 11 June 2026
 
 ### Blue rebrand (colours only — no data logic touched)
