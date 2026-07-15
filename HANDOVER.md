@@ -12,6 +12,26 @@ for hours.
 
 ---
 
+## Session record — 15 July 2026
+
+### Shared Apps Script backend hardened + redeployed (@9) — no display code changed
+
+The Apps Script backend this TV polls (`?action=getAll`, every 30s) had a max-effort
+review; three "must-fix" defects were fixed and redeployed to the prod deployment id
+(**@8 → @9**). **Nothing in this repo changed — no cache-bust needed.**
+
+Why it matters here: the server-side weekly week-increment (`autoIncrementWeekNumbers()`)
+runs from the top of `handleGetAll`, so **this TV's 24/7 30s poll is what advances every
+dog's `weekNumber` within ~30s of a new ISO-week** — no planner interaction or installed
+trigger needed. The hardening makes that path safe against a malformed `weekNumberSetDate`
+(no more `weekNumber = NaN`), stops one bad row from freezing the whole weekly pass, and
+flushes buffered writes before releasing the shared write lock.
+
+Source of truth for the fixes + 6 deferred findings: the planner repo's `HANDOVER.md`
+(15 July 2026) and workspace-root `APPS_SCRIPT.md` (`@9`).
+
+---
+
 ## Session record — 19 June 2026
 
 ### Training-date column (end date + break windows) — RIGHT-ALIGNED
