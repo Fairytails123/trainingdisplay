@@ -24,6 +24,10 @@ no-scroll/no-paging rule remains unchanged.
 
 Cache bust: CSS, JS and manifest query strings → `?v=20260726`.
 
+**Published and verified:** commit `856a6ec` on `master`; GitHub Pages serves
+`?v=20260726`. The shared live data was unchanged across deployment (16 dogs,
+22 assignments, 22 tombstones). Apps Script remained at `@9`.
+
 ## Session record — 15 July 2026
 
 ### Shared Apps Script backend hardened + redeployed (@9) — no display code changed
