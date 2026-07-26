@@ -370,6 +370,7 @@
   function fitToScreen() {
     var el = document.getElementById('schedule-content');
     if (!el) return;
+    el.classList.remove('schedule-content--compact');
     el.style.zoom = '';
     for (var i = 0; i < 5 && el.scrollHeight > el.clientHeight; i++) {
       var current = parseFloat(el.style.zoom) || 1;
@@ -378,6 +379,20 @@
       el.style.zoom = String(next);
       if (next === 0.4) break;
     }
+    // At the readability floor, reduce decorative spacing before allowing any
+    // row to be clipped. This preserves the product's single-screen invariant.
+    if (el.scrollHeight > el.clientHeight) {
+      el.classList.add('schedule-content--compact');
+      el.style.zoom = '';
+      for (var j = 0; j < 5 && el.scrollHeight > el.clientHeight; j++) {
+        var compactCurrent = parseFloat(el.style.zoom) || 1;
+        var compactNext = compactCurrent * (el.clientHeight / el.scrollHeight) * 0.99;
+        if (compactNext < 0.4) compactNext = 0.4;
+        el.style.zoom = String(compactNext);
+        if (compactNext === 0.4) break;
+      }
+    }
+    document.body.classList.toggle('schedule-overflow', el.scrollHeight > el.clientHeight);
   }
 
   function updateClock() {

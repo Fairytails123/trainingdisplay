@@ -12,6 +12,18 @@ for hours.
 
 ---
 
+## Session record — 26 July 2026
+
+### Single-screen overflow safety
+
+`fitToScreen()` now switches to a compact-density layout if the roster still
+overflows at the normal 0.4 zoom floor. The compact mode removes decorative
+spacing before sacrificing text; if content still cannot fit, the footer shows
+an explicit capacity warning rather than silently clipping rows. The hard
+no-scroll/no-paging rule remains unchanged.
+
+Cache bust: CSS, JS and manifest query strings → `?v=20260726`.
+
 ## Session record — 15 July 2026
 
 ### Shared Apps Script backend hardened + redeployed (@9) — no display code changed

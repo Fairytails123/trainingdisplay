@@ -411,3 +411,28 @@ body {
     align-items: flex-end;
   }
 }
+
+/* Emergency density mode used only when the full roster cannot fit at the
+   normal readability floor. It removes decoration before sacrificing text. */
+.schedule-content--compact .dog-row {
+  padding-top: 4px;
+  padding-bottom: 4px;
+  min-height: 0;
+}
+.schedule-content--compact .dog-row__slots,
+.schedule-content--compact .dog-row__equipment {
+  gap: 3px;
+}
+.schedule-content--compact .slot-card,
+.schedule-content--compact .equip-tag {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+.schedule-content--compact .dog-row__notes {
+  margin-top: 2px;
+}
+.schedule-overflow .display-footer::before {
+  content: 'Roster exceeds display capacity · ';
+  color: #FFB74D;
+  font-weight: 700;
+}
