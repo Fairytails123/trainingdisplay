@@ -28,6 +28,12 @@
   --empty-text: rgba(255, 255, 255, 0.25);
   --border: rgba(225, 243, 249, 0.1);
   --radius: 12px;
+  --amber: #FFB74D;
+  /* Missed-report chips: dark fill + light same-hue text (the AM slot-card
+     pairing convention). All text-on-fill pairs >= 4.5:1 for small-text AA. */
+  --report-green-bg: #1B5E20;  --report-green-text: #A5D6A7;
+  --report-amber-bg: #6B3F00;  --report-amber-text: var(--amber);
+  --report-red-bg:   #7F1D1D;  --report-red-text:   #FFCDD2;
 }
 
 *, *::before, *::after {
@@ -306,6 +312,40 @@ body {
 /* Emphasise the end date with brand cyan (large enough text to pass AA on dark) */
 .dog-row__date-item--end .dog-row__date-value { color: var(--ft-blue); }
 
+/* Missed-report chips: right-aligned per the dates-column rule; wrap, never
+   clip (flex shrink-to-fit inside the column width, like date values). Real
+   <button>s so the TV remote can activate them (cursor click, air-mouse, or
+   D-pad focus + OK); green = missed today, amber = 1 day old, red = 2+. */
+.report-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.report-chip {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+  border: none;
+  font-family: inherit;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+/* Visible D-pad focus ring (large ring element — cyan is fine here) */
+.report-chip:focus {
+  outline: 2px solid var(--ft-blue);
+  outline-offset: 1px;
+}
+
+.report-chip--age0 { background: var(--report-green-bg); color: var(--report-green-text); }
+.report-chip--age1 { background: var(--report-amber-bg); color: var(--report-amber-text); }
+.report-chip--age2 { background: var(--report-red-bg);   color: var(--report-red-text); }
+
 /* Equipment tags */
 .equip-tag {
   font-size: 0.7rem;
@@ -337,6 +377,32 @@ body {
   color: var(--conflict-red);
   font-weight: 600;
 }
+
+/* Muted middle span: shows "Report data unavailable" when the tracker feed
+   fails (never alarming — chips simply don't render rather than lie). */
+#report-status {
+  color: var(--text-muted);
+}
+
+/* Confirmation after a remote-press chip delete. Fixed overlay outside
+   #schedule-content so fitToScreen never measures it. */
+#dismiss-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 60px;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: var(--ft-tint);
+  padding: 10px 22px;
+  border-radius: 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 10;
+}
+#dismiss-toast.dismiss-toast--visible { opacity: 1; }
 
 /* ---- No Data State ---- */
 .no-data {
@@ -373,6 +439,7 @@ body {
   .dog-row__week { font-size: 0.85rem; }
   .dog-row__date-value { font-size: 1.2rem; }
   .dog-row__date-label { font-size: 0.85rem; }
+  .report-chip { font-size: 0.85rem; }
 }
 
 /* ---- Responsive for smaller TVs / tablets ---- */
@@ -431,8 +498,20 @@ body {
 .schedule-content--compact .dog-row__notes {
   margin-top: 2px;
 }
+.schedule-content--compact .dog-row__dates {
+  gap: 4px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+.schedule-content--compact .report-chips {
+  gap: 3px;
+}
+.schedule-content--compact .report-chip {
+  padding-top: 1px;
+  padding-bottom: 1px;
+}
 .schedule-overflow .display-footer::before {
   content: 'Roster exceeds display capacity · ';
-  color: #FFB74D;
+  color: var(--amber);
   font-weight: 700;
 }

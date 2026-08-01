@@ -12,6 +12,51 @@ for hours.
 
 ---
 
+## Session record — 1 August 2026
+
+### Missed training-report tracker (chips on dog cards) + TV-remote delete
+
+Each dog card now flags **missing daily training reports** as small date chips
+in the right-aligned dates column ("MISSED REPORTS" item, rendered last so
+Training-ends/Break items never jump). Data comes from a new top-level
+`reports` field in `getAll` (backend fetches the JotForm EU Training Report
+form server-side; see workspace `APPS_SCRIPT.md`).
+
+**Tracker rules (owner-decided):** report required **Mon–Thu** for every
+active dog; today counts as missed from **17:00**; a missed date auto-expires
+after **14 days** (max 8 chips); a date is never required before the dog's
+`createdAt`, after `trainingEndDate`, or inside a break window. Colour by age:
+**green** = today, **amber** = yesterday, **red** = 2+ days (new tokens
+`--report-*-bg/text`, dark-fill + light same-hue text per the AM slot-card AA
+convention; `--amber` promoted from the overflow-warning literal). A chip
+disappears as soon as a matching report (or a manual dismissal) arrives.
+
+**Availability contract:** `cachedData.reports === null` (getAll absent or
+`ok:false`) ⇒ the tracker renders NOTHING (never fake "missed") and the new
+muted footer span `#report-status` shows "Report data unavailable".
+
+**TV-remote delete (single press, owner choice):** chips are real `<button>`s —
+clickable for cursor/air-mouse remotes, plus document-level arrow-key
+navigation (focus ring, Enter deletes, Escape blurs, 20s auto-blur so a stray
+OK can't delete hours later; focus survives the 30s re-render by dogId|date).
+A press optimistically hides the chip (10-min local TTL), POSTs fire-and-forget
+`dismissReportDate` (no-cors, text/plain — never add JSON headers), and shows
+the `#dismiss-toast` confirmation. Dismissals persist in the Sheet's
+`Report_Dismissals` tab (audit log; delete the row to un-dismiss).
+
+**Pure-logic seam + tests:** `computeMissedReports()` takes "now" as data;
+`window.__FT_DISPLAY_TEST` (test-only, not a UI contract) exposes it plus
+`overrideNow`/`setReports`/`rerender` for DevTools time-travel. Node harness:
+`node .claude/report-tracker-test.js` (45 assertions — 17:00 gate, ages,
+gates, breaks, expiry, dismiss plumbing). Visual fixture:
+`.claude/fixture.html#s=chips|unavailable|clean` (gitignored), verified via
+headless-Chrome screenshots.
+
+**createdAt caveat:** the gate uses `createdAt.slice(0,10)` (UTC date) — up to
+one day off London-local for dogs created 23:00–01:00 UK; accepted.
+
+Cache bust: CSS, JS and manifest query strings → `?v=20260801`.
+
 ## Session record — 26 July 2026
 
 ### Single-screen overflow safety
