@@ -562,12 +562,28 @@
 
       html += '</div>'; // .dog-row__content
 
+      // Missed-report chips: their own column immediately LEFT of the training
+      // dates column (owner request 2026-08-02 — chips sharing the dates column
+      // crowded it). Same right-aligned presentation; collapses when no chips.
+      if (hasMissed) {
+        html += '<div class="dog-row__reports">' +
+                  '<div class="dog-row__date-item dog-row__date-item--reports">' +
+                    '<span class="dog-row__date-label">Missed reports</span>' +
+                    '<span class="report-chips">';
+        missed.forEach(function (mr) {
+          html += '<button type="button" class="report-chip report-chip--age' + mr.age + '"' +
+                  ' data-dog-id="' + escapeHtml(dog.id) + '"' +
+                  ' data-date="' + escapeHtml(mr.date) + '">' +
+                  escapeHtml(formatDateChip(mr.date)) +
+                  '</button>';
+        });
+        html += '</span></div></div>'; // .dog-row__reports
+      }
+
       // Right-aligned training dates column. Hard product requirement: anything
       // about the training end date or break windows is right-aligned from the
       // viewer's perspective (far right edge of the row, text-align: right).
-      // Missed-report chips are dog-level dates too, so they live here (last,
-      // so the existing items never jump position when chips come and go).
-      if (hasDates || hasMissed) {
+      if (hasDates) {
         html += '<div class="dog-row__dates">';
         if (endStr) {
           html += '<div class="dog-row__date-item dog-row__date-item--end">' +
@@ -586,19 +602,6 @@
                     '<span class="dog-row__date-label">Break 2</span>' +
                     '<span class="dog-row__date-value">' + escapeHtml(break2) + '</span>' +
                   '</div>';
-        }
-        if (hasMissed) {
-          html += '<div class="dog-row__date-item dog-row__date-item--reports">' +
-                    '<span class="dog-row__date-label">Missed reports</span>' +
-                    '<span class="report-chips">';
-          missed.forEach(function (mr) {
-            html += '<button type="button" class="report-chip report-chip--age' + mr.age + '"' +
-                    ' data-dog-id="' + escapeHtml(dog.id) + '"' +
-                    ' data-date="' + escapeHtml(mr.date) + '">' +
-                    escapeHtml(formatDateChip(mr.date)) +
-                    '</button>';
-          });
-          html += '</span></div>';
         }
         html += '</div>'; // .dog-row__dates
       }

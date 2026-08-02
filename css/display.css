@@ -312,6 +312,22 @@ body {
 /* Emphasise the end date with brand cyan (large enough text to pass AA on dark) */
 .dog-row__date-item--end .dog-row__date-value { color: var(--ft-blue); }
 
+/* Missed-reports column — its own block immediately LEFT of the dates column
+   (owner request 2026-08-02: chips sharing the dates column crowded it). Same
+   right-aligned conventions as .dog-row__dates; only rendered when the dog has
+   chips, so clean rows keep their full notes width. */
+.dog-row__reports {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  text-align: right;
+  padding: 12px 20px;
+  border-left: 1px solid var(--border);
+  max-width: clamp(150px, 18vw, 300px);
+}
+
 /* Missed-report chips: right-aligned per the dates-column rule; wrap, never
    clip (flex shrink-to-fit inside the column width, like date values). Real
    <button>s so the TV remote can activate them (cursor click, air-mouse, or
@@ -469,8 +485,9 @@ body {
   .dog-row__content { flex-direction: column; align-items: stretch; }
   .dog-row__notes { border-left: none; border-top: 1px solid var(--border); }
   .dog-row__name { font-size: 1rem; }
-  /* Stacked rows: dates span full width but stay right-aligned per the rule */
-  .dog-row__dates {
+  /* Stacked rows: dates + reports span full width but stay right-aligned */
+  .dog-row__dates,
+  .dog-row__reports {
     width: 100%;
     max-width: none;
     border-left: none;
@@ -498,7 +515,8 @@ body {
 .schedule-content--compact .dog-row__notes {
   margin-top: 2px;
 }
-.schedule-content--compact .dog-row__dates {
+.schedule-content--compact .dog-row__dates,
+.schedule-content--compact .dog-row__reports {
   gap: 4px;
   padding-top: 6px;
   padding-bottom: 6px;
