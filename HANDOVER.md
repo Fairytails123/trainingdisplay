@@ -12,6 +12,29 @@ for hours.
 
 ---
 
+## Session record — 2 August 2026
+
+### Tracker went LIVE + chips moved to their own column
+
+- **Backend live:** prod Apps Script redeployed `@9 → @10` (same `/exec` URL)
+  after the owner set `JOTFORM_API_KEY` and approved the one-time
+  `script.external_request` OAuth consent. Live `getAll` returns
+  `reports.ok:true`; 10 of 11 active dogs matched real JotForm report dates on
+  first fetch. Full backend contract: workspace `APPS_SCRIPT.md`.
+- **Layout change (owner request):** missed-report chips moved OUT of
+  `.dog-row__dates` into their own `.dog-row__reports` column rendered
+  immediately LEFT of the dates column (commit `fa02246`) — the shared column
+  felt overcrowded. The dates column is back to end/break dates only; the
+  reports column collapses entirely when a dog has no chips (clean rows keep
+  full notes width). Stacked (≤640px) and compact-density CSS mirrored; chip
+  classes/data-attrs unchanged, so D-pad navigation, dismissal and re-render
+  focus restore are untouched (45-assertion node suite still green).
+- Verified via the local fixture AND a live 1920×1080 headless screenshot
+  (real data, including a temporary "ZZ Test Dog" demo row + one live
+  dismissal round-trip through `Report_Dismissals`).
+- Cache bust: `?v=20260802` (css/js/manifest). **TVs must reload the page
+  once** — the 30s poll refreshes data, not code.
+
 ## Session record — 1 August 2026
 
 ### Missed training-report tracker (chips on dog cards) + TV-remote delete
