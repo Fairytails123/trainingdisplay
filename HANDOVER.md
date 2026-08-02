@@ -34,6 +34,13 @@ for hours.
   dismissal round-trip through `Report_Dismissals`).
 - Cache bust: `?v=20260802` (css/js/manifest). **TVs must reload the page
   once** — the 30s poll refreshes data, not code.
+- Demo data removed end of session (demo dog deleted + tombstoned; one inert
+  audit row left for owner hand-delete). The owner performed 4 real chip
+  dismissals the same morning — the dismissal path is production-proven on
+  real data. Owner-confirmed behaviour: chip colours (green = today from
+  17:00, amber = yesterday, red = 2+ calendar days) and freshness (worst case
+  ~5½ min from JotForm submission to chip clearing: 5-min backend cache +
+  30s TV poll; dismissals stick within ~30s).
 
 ## Session record — 1 August 2026
 
