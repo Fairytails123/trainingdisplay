@@ -1,2 +1,6 @@
 # Local working artefacts — never deploy these
 .claude/
+
+.task/
+
+.gate-evidence/
